@@ -1,6 +1,6 @@
 {
-  "name": "notion-to-md",
-  "version": "2.5.5",
+  "name": "notion-to-markdown",
+  "version": "2.6.5",
   "engines": {
     "node": ">=12"
   },
@@ -23,19 +23,19 @@
     "notion-to-md",
     "notion2md"
   ],
-  "author": "Souvik Kar Mahapatra <souvikat001+chitchat@gmail.com>",
-  "license": "ISC",
+  "author": "HEIGE-PCloud",
+  "license": "MIT",
   "files": [
     "build/**"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/souvikinator/notion-to-md.git"
+    "url": "git+https://github.com/HEIGE-PCloud/Notion-To-Markdown.git"
   },
   "bugs": {
-    "url": "https://github.com/souvikinator/notion-to-md/issues"
+    "url": "https://github.com/HEIGE-PCloud/Notion-To-Markdown/issues"
   },
-  "homepage": "https://github.com/souvikinator/notion-to-md#readme",
+  "homepage": "https://github.com/HEIGE-PCloud/Notion-To-Markdown#readme",
   "description": "convert notion pages, block and list of blocks to markdown (supports nesting)",
   "devDependencies": {
     "@notionhq/client": "^2.2.0",
