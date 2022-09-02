@@ -330,127 +330,72 @@ export class NotionToMarkdown {
 
         return md.toggle(toggle_summary, toggle_children_md_string);
       }
-      // Rest of the types
-      // "paragraph"
-      // "heading_1"
-      // "heading_2"
-      // "heading_3"
-      // "bulleted_list_item"
-      // "numbered_list_item"
-      // "quote"
-      // "to_do"
-      // "template"
-      // "synced_block"
-      // "child_page"
-      // "child_database"
-      // "code"
-      // "callout"
-      // "breadcrumb"
-      // "table_of_contents"
-      // "column_list"
-      // "column"
-      // "link_to_page"
-      // "audio"
-      // "unsupported"
 
-      default: {
-        // In this case typescript is not able to index the types properly, hence ignoring the error
-        // @ts-ignore
-        let blockContent = block[type].text || block[type].rich_text || [];
-        blockContent.map((content: Text) => {
-          const annotations = content.annotations;
-          let plain_text = content.plain_text;
-
-          plain_text = this.annotatePlainText(plain_text, annotations);
-
-          if (content["href"])
-            plain_text = md.link(plain_text, content["href"]);
-
-          parsedData += plain_text;
-        });
-      }
-    }
-
-    switch (type) {
-      case "code":
-        {
-          parsedData = md.codeBlock(parsedData, block[type].language);
-        }
-        break;
-
+      case "paragraph":
+        return md.richText(block.paragraph.rich_text);
       case "heading_1":
-        {
-          parsedData = md.heading1(parsedData);
-        }
-        break;
-
+        return md.heading1(md.richText(block.heading_1.rich_text));
       case "heading_2":
-        {
-          parsedData = md.heading2(parsedData);
-        }
-        break;
-
+        return md.heading2(md.richText(block.heading_2.rich_text));
       case "heading_3":
-        {
-          parsedData = md.heading3(parsedData);
-        }
-        break;
-
-      case "quote":
-        {
-          parsedData = md.quote(parsedData);
-        }
-        break;
-
-      case "callout":
-        {
-          const { id, has_children } = block;
-          let callout_string = "";
-
-          if (!has_children) {
-            return md.callout(parsedData, block[type].icon);
-          }
-
-          const callout_children_object = await getBlockChildren(
-            this.notionClient,
-            id,
-            100
-          );
-
-          // // parse children blocks to md object
-          const callout_children = await this.blocksToMarkdown(
-            callout_children_object
-          );
-
-          callout_string += `${parsedData}\n`;
-          callout_children.map((child) => {
-            callout_string += `${child.parent}\n\n`;
-          });
-
-          parsedData = md.callout(callout_string.trim(), block[type].icon);
-        }
-        break;
-
+        return md.heading3(md.richText(block.heading_3.rich_text));
       case "bulleted_list_item":
-        {
-          parsedData = md.bullet(parsedData);
-        }
-        break;
-
+        return md.bullet(md.richText(block.bulleted_list_item.rich_text));
       case "numbered_list_item":
-        {
-          parsedData = md.bullet(parsedData, block.numbered_list_item.number);
-        }
-        break;
-
+        return md.bullet(
+          md.richText(block.numbered_list_item.rich_text),
+          block.numbered_list_item.number
+        );
+      case "quote":
+        return md.quote(md.richText(block.quote.rich_text));
       case "to_do":
-        {
-          parsedData = md.todo(parsedData, block.to_do.checked);
+        return md.todo(md.richText(block.to_do.rich_text), block.to_do.checked);
+      case "code":
+        return md.codeBlock(
+          md.richText(block.code.rich_text, true),
+          block.code.language
+        );
+      case "callout":
+        const { id, has_children } = block;
+        if (!has_children) {
+          return md.callout(parsedData, block[type].icon);
         }
-        break;
-    }
 
-    return parsedData;
+        let callout_string = "";
+
+        const callout_children_object = await getBlockChildren(
+          this.notionClient,
+          id,
+          100
+        );
+
+        // parse children blocks to md object
+        const callout_children = await this.blocksToMarkdown(
+          callout_children_object
+        );
+
+        callout_string += `${parsedData}\n`;
+        callout_children.map((child) => {
+          callout_string += `${child.parent}\n\n`;
+        });
+
+        return md.callout(callout_string.trim(), block.callout.icon);
+
+      case "template":
+      case "synced_block":
+      case "child_page":
+      case "child_database":
+      case "column":
+      case "link_preview":
+      case "column_list":
+      case "link_to_page":
+      case "breadcrumb":
+      case "unsupported":
+      case "table_of_contents":
+      case "audio":
+        return "";
+    }
+    return "";
   }
 
   /**
