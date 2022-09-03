@@ -108,6 +108,20 @@ export class NotionToMarkdown {
 
     for (const block of blocks) {
       if (!isFullBlock(block)) continue
+      let expiry_time: string | undefined = undefined
+      if (block.type === 'pdf' && block.pdf.type === 'file') {
+          expiry_time = block.pdf.file.expiry_time
+      }
+      if (block.type === 'image' && block.image.type === 'file') {
+          expiry_time = block.image.file.expiry_time
+      }
+      if (block.type === 'video' && block.video.type === 'file') {
+          expiry_time = block.video.file.expiry_time
+      }
+      if (block.type === 'file' && block.file.type === 'file') {
+          expiry_time = block.file.file.expiry_time
+      }
+
       if (
         block.has_children &&
         block.type !== "column_list" &&
@@ -119,28 +133,25 @@ export class NotionToMarkdown {
           block.id,
           totalPage
         );
+
         mdBlocks.push({
           type: block.type,
           parent: await this.blockToMarkdown(block),
           children: [],
+          expiry_time
         });
 
-        let l = mdBlocks.length;
         await this.blocksToMarkdown(
           child_blocks,
           totalPage,
-          mdBlocks[l - 1].children
+          mdBlocks[mdBlocks.length - 1].children
         );
         continue;
       }
       let tmp = await this.blockToMarkdown(block);
-      // console.log(block);
-      // @ts-ignore
-      mdBlocks.push({ type: block.type, parent: tmp, children: [] });
+      mdBlocks.push({ type: block.type, parent: tmp, children: [], expiry_time });
 
     }
-
-
     return mdBlocks;
   }
 
