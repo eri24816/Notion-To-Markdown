@@ -1,10 +1,6 @@
 import { Client, isFullBlock } from "@notionhq/client";
 import { GetBlockResponse } from "@notionhq/client/build/src/api-endpoints";
-import {
-  MdBlock,
-  NotionToMarkdownOptions,
-  CustomTransformer,
-} from "./types";
+import { MdBlock, NotionToMarkdownOptions, CustomTransformer } from "./types";
 import * as md from "./utils/md";
 import { getBlockChildren } from "./utils/notion";
 
@@ -107,26 +103,27 @@ export class NotionToMarkdown {
     if (!blocks) return mdBlocks;
 
     for (const block of blocks) {
-      if (!isFullBlock(block)) continue
-      let expiry_time: string | undefined = undefined
-      if (block.type === 'pdf' && block.pdf.type === 'file') {
-          expiry_time = block.pdf.file.expiry_time
+      if (!isFullBlock(block)) continue;
+      let expiry_time: string | undefined = undefined;
+      if (block.type === "pdf" && block.pdf.type === "file") {
+        expiry_time = block.pdf.file.expiry_time;
       }
-      if (block.type === 'image' && block.image.type === 'file') {
-          expiry_time = block.image.file.expiry_time
+      if (block.type === "image" && block.image.type === "file") {
+        expiry_time = block.image.file.expiry_time;
       }
-      if (block.type === 'video' && block.video.type === 'file') {
-          expiry_time = block.video.file.expiry_time
+      if (block.type === "video" && block.video.type === "file") {
+        expiry_time = block.video.file.expiry_time;
       }
-      if (block.type === 'file' && block.file.type === 'file') {
-          expiry_time = block.file.file.expiry_time
+      if (block.type === "file" && block.file.type === "file") {
+        expiry_time = block.file.file.expiry_time;
       }
 
       if (
         block.has_children &&
         block.type !== "column_list" &&
         block.type !== "toggle" &&
-        block.type !== "callout"
+        block.type !== "callout" &&
+        block.type !== "quote"
       ) {
         let child_blocks = await getBlockChildren(
           this.notionClient,
@@ -138,7 +135,7 @@ export class NotionToMarkdown {
           type: block.type,
           parent: await this.blockToMarkdown(block),
           children: [],
-          expiry_time
+          expiry_time,
         });
 
         await this.blocksToMarkdown(
@@ -149,8 +146,12 @@ export class NotionToMarkdown {
         continue;
       }
       let tmp = await this.blockToMarkdown(block);
-      mdBlocks.push({ type: block.type, parent: tmp, children: [], expiry_time });
-
+      mdBlocks.push({
+        type: block.type,
+        parent: tmp,
+        children: [],
+        expiry_time,
+      });
     }
     return mdBlocks;
   }
@@ -161,10 +162,8 @@ export class NotionToMarkdown {
    * @returns corresponding markdown string of the passed block
    */
   async blockToMarkdown(block: GetBlockResponse): Promise<string> {
-    
     if (typeof block !== "object" || !("type" in block)) return "";
 
-    let parsedData = "";
     const { type } = block;
     if (type in this.customTransformers && !!this.customTransformers[type])
       return await this.customTransformers[type](block);
@@ -353,12 +352,7 @@ export class NotionToMarkdown {
       case "bulleted_list_item":
         return md.bullet(md.richText(block.bulleted_list_item.rich_text));
       case "numbered_list_item":
-        return md.bullet(
-          md.richText(block.numbered_list_item.rich_text),
-          1
-        );
-      case "quote":
-        return md.quote(md.richText(block.quote.rich_text));
+        return md.bullet(md.richText(block.numbered_list_item.rich_text), 1);
       case "to_do":
         return md.todo(md.richText(block.to_do.rich_text), block.to_do.checked);
       case "code":
@@ -368,9 +362,8 @@ export class NotionToMarkdown {
         );
       case "callout":
         const { id, has_children } = block;
-        if (!has_children) {
-          return md.callout(parsedData, block.callout.icon);
-        }
+        const callout_text = md.richText(block.callout.rich_text);
+        if (!has_children) return md.callout(callout_text, block.callout.icon);
 
         let callout_string = "";
 
@@ -385,12 +378,31 @@ export class NotionToMarkdown {
           callout_children_object
         );
 
-        callout_string += `${parsedData}\n`;
+        callout_string += `${callout_text}\n`;
         callout_children.map((child) => {
           callout_string += `${child.parent}\n\n`;
         });
 
         return md.callout(callout_string.trim(), block.callout.icon);
+      case "quote":
+        const quote_text = md.richText(block.quote.rich_text)
+        if (!block.has_children) return md.quote(quote_text);
+        let quote_string = "";
+        const quote_children_object = await getBlockChildren(
+          this.notionClient,
+          block.id,
+          100
+        );
+        const quote_children = await this.blocksToMarkdown(
+          quote_children_object
+        );
+
+        quote_string += `${quote_text}\n`;
+        quote_children.map((child) => {
+          quote_string += `${child.parent}\n\n`;
+        });
+
+        return md.quote(quote_string.trim());
 
       case "template":
       case "synced_block":
