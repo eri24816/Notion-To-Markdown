@@ -1,10 +1,7 @@
-import { Client } from "@notionhq/client";
+import { Client, isFullBlock } from "@notionhq/client";
+import { GetBlockResponse } from "@notionhq/client/build/src/api-endpoints";
 import {
-  Annotations,
-  ListBlockChildrenResponseResult,
-  ListBlockChildrenResponseResults,
   MdBlock,
-  Text,
   NotionToMarkdownOptions,
   CustomTransformer,
 } from "./types";
@@ -97,7 +94,7 @@ export class NotionToMarkdown {
    * @returns {Promise<MdBlock[]>} - Array of markdown blocks with their children
    */
   async blocksToMarkdown(
-    blocks?: ListBlockChildrenResponseResults,
+    blocks?: GetBlockResponse[],
     totalPage: number | null = null,
     mdBlocks: MdBlock[] = []
   ): Promise<MdBlock[]> {
@@ -109,10 +106,9 @@ export class NotionToMarkdown {
 
     if (!blocks) return mdBlocks;
 
-    for (let i = 0; i < blocks.length; i++) {
-      let block = blocks[i];
+    for (const block of blocks) {
+      if (!isFullBlock(block)) continue
       if (
-        "has_children" in block &&
         block.has_children &&
         block.type !== "column_list" &&
         block.type !== "toggle" &&
@@ -141,16 +137,20 @@ export class NotionToMarkdown {
       // console.log(block);
       // @ts-ignore
       mdBlocks.push({ type: block.type, parent: tmp, children: [] });
+
     }
+
+
     return mdBlocks;
   }
 
   /**
    * Converts a Notion Block to a Markdown Block
-   * @param {ListBlockChildrenResponseResult} block - single notion block
-   * @returns {string} corresponding markdown string of the passed block
+   * @param block - single notion block
+   * @returns corresponding markdown string of the passed block
    */
-  async blockToMarkdown(block: ListBlockChildrenResponseResult) {
+  async blockToMarkdown(block: GetBlockResponse): Promise<string> {
+    
     if (typeof block !== "object" || !("type" in block)) return "";
 
     let parsedData = "";
@@ -252,7 +252,7 @@ export class NotionToMarkdown {
                 await this.blockToMarkdown({
                   type: "paragraph",
                   paragraph: { rich_text: cell },
-                } as ListBlockChildrenResponseResult)
+                } as GetBlockResponse)
             );
 
             const cellStringArr = await Promise.all(cellStringPromise);
@@ -344,7 +344,7 @@ export class NotionToMarkdown {
       case "numbered_list_item":
         return md.bullet(
           md.richText(block.numbered_list_item.rich_text),
-          block.numbered_list_item.number
+          1
         );
       case "quote":
         return md.quote(md.richText(block.quote.rich_text));
@@ -358,7 +358,7 @@ export class NotionToMarkdown {
       case "callout":
         const { id, has_children } = block;
         if (!has_children) {
-          return md.callout(parsedData, block[type].icon);
+          return md.callout(parsedData, block.callout.icon);
         }
 
         let callout_string = "";
@@ -396,34 +396,5 @@ export class NotionToMarkdown {
         return "";
     }
     return "";
-  }
-
-  /**
-   * Annoate text using provided annotations
-   * @param {string} text - String to be annotated
-   * @param {Annotations} annotations - Annotation object of a notion block
-   * @returns {string} - Annotated text
-   */
-  annotatePlainText(text: string, annotations: Annotations): string {
-    // if text is all spaces, don't annotate
-    if (text.match(/^\s*$/)) return text;
-
-    const leadingSpaceMatch = text.match(/^(\s*)/);
-    const trailingSpaceMatch = text.match(/(\s*)$/);
-
-    const leading_space = leadingSpaceMatch ? leadingSpaceMatch[0] : "";
-    const trailing_space = trailingSpaceMatch ? trailingSpaceMatch[0] : "";
-
-    text = text.trim();
-
-    if (text !== "") {
-      if (annotations.code) text = md.inlineCode(text);
-      if (annotations.bold) text = md.bold(text);
-      if (annotations.italic) text = md.italic(text);
-      if (annotations.strikethrough) text = md.strikethrough(text);
-      if (annotations.underline) text = md.underline(text);
-    }
-
-    return leading_space + text + trailing_space;
   }
 }

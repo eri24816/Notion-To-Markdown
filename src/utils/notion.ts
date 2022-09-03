@@ -1,6 +1,5 @@
 import { Client } from "@notionhq/client";
-import { ListBlockChildrenResponse } from "@notionhq/client/build/src/api-endpoints";
-import { ListBlockChildrenResponseResults } from "../types";
+import { GetBlockResponse, ListBlockChildrenResponse } from "@notionhq/client/build/src/api-endpoints";
 
 export const getBlockChildren = async (
   notionClient: Client,
@@ -8,45 +7,27 @@ export const getBlockChildren = async (
   totalPage: number | null
 ) => {
   try {
-    let result: ListBlockChildrenResponseResults = [];
+    let results: GetBlockResponse[] = [];
     let pageCount = 0;
     let start_cursor = undefined;
 
     do {
-      const response = (await notionClient.blocks.children.list({
-        start_cursor: start_cursor,
-        block_id: block_id,
-      })) as ListBlockChildrenResponse;
-      result.push(...response.results);
+      const response: ListBlockChildrenResponse = await notionClient.blocks.children.list({
+        start_cursor,
+        block_id
+      })
+      results.push(...response.results);
 
-      start_cursor = response?.next_cursor;
+      start_cursor = response.next_cursor;
       pageCount += 1;
     } while (
       start_cursor != null &&
       (totalPage == null || pageCount < totalPage)
     );
 
-    modifyNumberedListObject(result);
-    return result;
+    return results;
   } catch (e) {
     console.log(e);
     return [];
-  }
-};
-
-export const modifyNumberedListObject = (
-  blocks: ListBlockChildrenResponseResults
-) => {
-  let numberedListIndex = 0;
-
-  for (const block of blocks) {
-    if ("type" in block && block.type === "numbered_list_item") {
-      // add numbers
-      // @ts-ignore
-      block.numbered_list_item.number = ++numberedListIndex;
-    }
-    else {
-      numberedListIndex = 0;
-    }
   }
 };
