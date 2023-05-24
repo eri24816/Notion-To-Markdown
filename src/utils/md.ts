@@ -1,8 +1,8 @@
-import markdownTable from "markdown-table";
+import { markdownTable } from "markdown-table";
 import { RichTextItemResponse } from "@notionhq/client/build/src/api-endpoints";
-import katex from 'katex'
+import katex from "katex";
 import { CalloutIcon } from "../types";
-require('katex/contrib/mhchem')
+require("katex/contrib/mhchem");
 export const inlineCode = (text: string) => {
   return `\`${text}\``;
 };
@@ -106,28 +106,32 @@ export const table = (cells: string[][]) => {
 
 export const richText = (textArray: RichTextItemResponse[], plain = false) => {
   if (plain) {
-    return textArray.map((text) => {
-      return text.plain_text
-    }).join('')
+    return textArray
+      .map((text) => {
+        return text.plain_text;
+      })
+      .join("");
   }
 
-  return textArray.map((text) => {
-    if (text.type === 'text') {
-      const annotations = text.annotations
-      let content = text.text.content
-      if (annotations.bold) content = bold(content)
-      if (annotations.code) content = inlineCode(content)
-      if (annotations.italic) content = italic(content)
-      if (annotations.strikethrough) content = strikethrough(content)
-      if (annotations.underline) content = underline(content)
-      return content
-    } else if (text.type === 'equation') {
-      return katex.renderToString(text.equation.expression, {
-        displayMode: false,
-        throwOnError: false
-      })
-    } else {
-      // TODO
-    }
-  }).join('')
+  return textArray
+    .map((text) => {
+      if (text.type === "text") {
+        const annotations = text.annotations;
+        let content = text.text.content;
+        if (annotations.bold) content = bold(content);
+        if (annotations.code) content = inlineCode(content);
+        if (annotations.italic) content = italic(content);
+        if (annotations.strikethrough) content = strikethrough(content);
+        if (annotations.underline) content = underline(content);
+        return content;
+      } else if (text.type === "equation") {
+        return katex.renderToString(text.equation.expression, {
+          displayMode: false,
+          throwOnError: false,
+        });
+      } else {
+        // TODO
+      }
+    })
+    .join("");
 };
