@@ -1,5 +1,5 @@
 import { Client, isFullBlock } from "@notionhq/client";
-import { GetBlockResponse } from "@notionhq/client/build/src/api-endpoints";
+import { GetBlockResponse, RichTextItemResponse } from "@notionhq/client/build/src/api-endpoints";
 import { MdBlock, NotionToMarkdownOptions, CustomTransformer } from "./types";
 import * as md from "./utils/md";
 import { getBlockChildren } from "./utils/notion";
@@ -10,9 +10,11 @@ import { getBlockChildren } from "./utils/notion";
 export class NotionToMarkdown {
   private notionClient: Client;
   private customTransformers: Record<string, CustomTransformer>;
+  private richTextTransformer: ((textArray: RichTextItemResponse[], plain?: boolean) => string) | undefined;
   constructor(options: NotionToMarkdownOptions) {
     this.notionClient = options.notionClient;
     this.customTransformers = {};
+    this.richTextTransformer = undefined;
   }
   setCustomTransformer(
     type: string,
@@ -20,6 +22,10 @@ export class NotionToMarkdown {
   ): NotionToMarkdown {
     this.customTransformers[type] = transformer;
 
+    return this;
+  }
+  setCustomRichTextTransformer(transformer: (textArray: RichTextItemResponse[], plain?: boolean) => string) {
+    this.richTextTransformer = transformer;
     return this;
   }
   /**
@@ -167,7 +173,7 @@ export class NotionToMarkdown {
     const { type } = block;
     if (type in this.customTransformers && !!this.customTransformers[type])
       return await this.customTransformers[type](block);
-
+    const richText = this.richTextTransformer ?? md.richText
     switch (type) {
       case "image":
         {
@@ -342,27 +348,27 @@ export class NotionToMarkdown {
       }
 
       case "paragraph":
-        return md.richText(block.paragraph.rich_text);
+        return richText(block.paragraph.rich_text);
       case "heading_1":
-        return md.heading1(md.richText(block.heading_1.rich_text));
+        return md.heading1(richText(block.heading_1.rich_text));
       case "heading_2":
-        return md.heading2(md.richText(block.heading_2.rich_text));
+        return md.heading2(richText(block.heading_2.rich_text));
       case "heading_3":
-        return md.heading3(md.richText(block.heading_3.rich_text));
+        return md.heading3(richText(block.heading_3.rich_text));
       case "bulleted_list_item":
-        return md.bullet(md.richText(block.bulleted_list_item.rich_text));
+        return md.bullet(richText(block.bulleted_list_item.rich_text));
       case "numbered_list_item":
-        return md.bullet(md.richText(block.numbered_list_item.rich_text), 1);
+        return md.bullet(richText(block.numbered_list_item.rich_text), 1);
       case "to_do":
-        return md.todo(md.richText(block.to_do.rich_text), block.to_do.checked);
+        return md.todo(richText(block.to_do.rich_text), block.to_do.checked);
       case "code":
         return md.codeBlock(
-          md.richText(block.code.rich_text, true),
+          richText(block.code.rich_text, true),
           block.code.language
         );
       case "callout":
         const { id, has_children } = block;
-        const callout_text = md.richText(block.callout.rich_text);
+        const callout_text = richText(block.callout.rich_text);
         if (!has_children) return md.callout(callout_text, block.callout.icon);
 
         let callout_string = "";
@@ -385,7 +391,7 @@ export class NotionToMarkdown {
 
         return md.callout(callout_string.trim(), block.callout.icon);
       case "quote":
-        const quote_text = md.richText(block.quote.rich_text)
+        const quote_text = richText(block.quote.rich_text)
         if (!block.has_children) return md.quote(quote_text);
         let quote_string = "";
         const quote_children_object = await getBlockChildren(
