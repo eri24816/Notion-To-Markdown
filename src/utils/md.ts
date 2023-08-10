@@ -106,11 +106,7 @@ export const table = (cells: string[][]) => {
 
 export const richText = (textArray: RichTextItemResponse[], plain = false) => {
   if (plain) {
-    return textArray
-      .map((text) => {
-        return text.plain_text;
-      })
-      .join("");
+    return textArray.map((text) => text.plain_text).join("");
   }
 
   return textArray
@@ -118,11 +114,24 @@ export const richText = (textArray: RichTextItemResponse[], plain = false) => {
       if (text.type === "text") {
         const annotations = text.annotations;
         let content = text.text.content;
-        if (annotations.bold) content = bold(content);
-        if (annotations.code) content = inlineCode(content);
-        if (annotations.italic) content = italic(content);
-        if (annotations.strikethrough) content = strikethrough(content);
-        if (annotations.underline) content = underline(content);
+        if (annotations.bold) {
+          content = bold(content);
+        }
+        if (annotations.code) {
+          content = inlineCode(content);
+        }
+        if (annotations.italic) {
+          content = italic(content);
+        }
+        if (annotations.strikethrough) {
+          content = strikethrough(content);
+        }
+        if (annotations.underline) {
+          content = underline(content);
+        }
+        if (text.href) {
+          content = link(content, text.href);
+        }
         return content;
       } else if (text.type === "equation") {
         return katex.renderToString(text.equation.expression, {
