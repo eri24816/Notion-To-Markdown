@@ -1,5 +1,5 @@
 import markdownTable from "markdown-table";
-import { RichTextItemResponse } from "@notionhq/client/build/src/api-endpoints";
+import { RichTextItemResponse, VideoBlockObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import katex from "katex";
 import { CalloutIcon } from "../types";
 require("katex/contrib/mhchem");
@@ -144,3 +144,31 @@ export const richText = (textArray: RichTextItemResponse[], plain = false) => {
     })
     .join("");
 };
+
+export const video = (block: VideoBlockObjectResponse) => {
+  const videoBlock = block.video;
+  if (videoBlock.type === "file") {
+    return htmlVideo(videoBlock.file.url);
+  }
+  const url = videoBlock.external.url;
+  if (url.startsWith("https://www.youtube.com/")) {
+    /*
+      YouTube video links that include embed or watch.
+      E.g. https://www.youtube.com/watch?v=[id], https://www.youtube.com/embed/[id]
+    */
+    // get last 11 characters of the url as the video id
+    const videoId = url.slice(-11);
+    return `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+  }
+  return htmlVideo(url);
+}
+
+function htmlVideo (url: string) {
+  return `<video controls style="height:auto;width:100%;">
+  <source src="${url}">
+  <p>
+    Your browser does not support HTML5 video. Here is a
+    <a href="${url}" download="${url}">link to the video</a> instead.
+  </p>
+</video>`;
+}
