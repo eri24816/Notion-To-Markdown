@@ -1,5 +1,5 @@
 import markdownTable from "markdown-table";
-import { PdfBlockObjectResponse, RichTextItemResponse, VideoBlockObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { AudioBlockObjectResponse, PdfBlockObjectResponse, RichTextItemResponse, VideoBlockObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import katex from "katex";
 import { CalloutIcon } from "../types";
 require("katex/contrib/mhchem");
@@ -173,8 +173,14 @@ function htmlVideo (url: string) {
 </video>`;
 }
 
-export const pdf = (block :PdfBlockObjectResponse) => {
+export const pdf = (block: PdfBlockObjectResponse) => {
   const pdfBlock = block.pdf;
   const url = pdfBlock.type === "file" ? pdfBlock.file.url : pdfBlock.external.url;
   return `<embed src="${url}" type="application/pdf" width="500" height="707" />`;
+}
+
+export const audio = (block: AudioBlockObjectResponse) => {
+  const audioBlock = block.audio;
+  const url = audioBlock.type === "file" ? audioBlock.file.url : audioBlock.external.url;
+  return `<audio controls src="${url}"></audio>`
 }

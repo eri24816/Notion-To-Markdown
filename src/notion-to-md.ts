@@ -410,6 +410,8 @@ export class NotionToMarkdown {
 
         return md.quote(quote_string.trim());
 
+      case "audio":
+        return md.audio(block);
       case "template":
       case "synced_block":
       case "child_page":
@@ -421,7 +423,6 @@ export class NotionToMarkdown {
       case "breadcrumb":
       case "unsupported":
       case "table_of_contents":
-      case "audio":
         return "";
     }
     return "";
