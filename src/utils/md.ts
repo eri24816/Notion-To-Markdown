@@ -1,5 +1,5 @@
 import markdownTable from "markdown-table";
-import { RichTextItemResponse, VideoBlockObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { PdfBlockObjectResponse, RichTextItemResponse, VideoBlockObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import katex from "katex";
 import { CalloutIcon } from "../types";
 require("katex/contrib/mhchem");
@@ -171,4 +171,10 @@ function htmlVideo (url: string) {
     <a href="${url}" download="${url}">link to the video</a> instead.
   </p>
 </video>`;
+}
+
+export const pdf = (block :PdfBlockObjectResponse) => {
+  const pdfBlock = block.pdf;
+  const url = pdfBlock.type === "file" ? pdfBlock.file.url : pdfBlock.external.url;
+  return `<embed src="${url}" type="application/pdf" width="500" height="707" />`;
 }

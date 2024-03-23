@@ -199,12 +199,12 @@ export class NotionToMarkdown {
 
       case "video":
         return md.video(block);
-      case "file":
       case "pdf":
+        return md.pdf(block);
+      case "file":
         {
           let blockContent;
           if (type === "file") blockContent = block.file;
-          if (type === "pdf") blockContent = block.pdf;
           if (blockContent) {
             const file_type = blockContent.type;
             if (file_type === "external")
