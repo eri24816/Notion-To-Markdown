@@ -11,6 +11,7 @@ export class NotionToMarkdown {
   private notionClient: Client;
   private customTransformers: Record<string, CustomTransformer>;
   private richTextTransformer: ((textArray: RichTextItemResponse[], plain?: boolean) => string) | undefined;
+  private unsupportedTransformer: ((type: string) => string) = () => "";
   constructor(options: NotionToMarkdownOptions) {
     this.notionClient = options.notionClient;
     this.customTransformers = {};
@@ -26,6 +27,10 @@ export class NotionToMarkdown {
   }
   setCustomRichTextTransformer(transformer: (textArray: RichTextItemResponse[], plain?: boolean) => string) {
     this.richTextTransformer = transformer;
+    return this;
+  }
+  setUnsupportedTransformer(transformer : (type: string) => string) {
+    this.unsupportedTransformer = transformer;
     return this;
   }
   /**
@@ -423,7 +428,7 @@ export class NotionToMarkdown {
       case "breadcrumb":
       case "unsupported":
       case "table_of_contents":
-        return "";
+        return this.unsupportedTransformer(type);
     }
     return "";
   }
