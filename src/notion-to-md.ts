@@ -205,6 +205,11 @@ export class NotionToMarkdown {
           return md.link(file.name, link);
         }
       case "bookmark":
+        {
+          const bookmark = block.bookmark;
+          const caption = bookmark.caption.length > 0 ? richText(bookmark.caption, false) : bookmark.url;
+          return md.link(caption, bookmark.url);
+        }
       case "embed":
       case "link_preview":
       case "link_to_page":
@@ -213,7 +218,6 @@ export class NotionToMarkdown {
         {
           let blockContent;
           let title: string = type;
-          if (type === "bookmark") blockContent = block.bookmark;
           if (type === "embed") blockContent = block.embed;
           if (type === "link_preview") blockContent = block.link_preview;
           if (
