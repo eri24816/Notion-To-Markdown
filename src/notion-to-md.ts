@@ -182,18 +182,10 @@ export class NotionToMarkdown {
     switch (type) {
       case "image":
         {
-          let blockContent = block.image;
-          const image_caption_plain = blockContent.caption
-            .map((item) => item.plain_text)
-            .join("");
-          const image_type = blockContent.type;
-          if (image_type === "external")
-            return md.image(image_caption_plain, blockContent.external.url);
-          if (image_type === "file")
-            return md.image(image_caption_plain, blockContent.file.url);
+          const image = block.image;
+          const url = image.type === "external" ? image.external.url : image.file.url;
+          return md.image(richText(image.caption, true), url);
         }
-        break;
-
       case "divider": {
         return md.divider();
       }
@@ -208,18 +200,10 @@ export class NotionToMarkdown {
         return md.pdf(block);
       case "file":
         {
-          let blockContent;
-          if (type === "file") blockContent = block.file;
-          if (blockContent) {
-            const file_type = blockContent.type;
-            if (file_type === "external")
-              return md.link("image", blockContent.external.url);
-            if (file_type === "file")
-              return md.link("image", blockContent.file.url);
-          }
+          const file = block.file;
+          const link = file.type === "external" ? file.external.url : file.file.url;
+          return md.link(file.name, link);
         }
-        break;
-
       case "bookmark":
       case "embed":
       case "link_preview":
