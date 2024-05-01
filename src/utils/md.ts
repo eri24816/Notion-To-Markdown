@@ -2,6 +2,8 @@ import markdownTable from "markdown-table";
 import { AudioBlockObjectResponse, PdfBlockObjectResponse, RichTextItemResponse, VideoBlockObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 import katex from "katex";
 import { CalloutIcon } from "../types";
+import { getPageLinkFromId } from "./notion"
+import { Client } from "@notionhq/client"
 require("katex/contrib/mhchem");
 export const inlineCode = (text: string) => {
   return `\`${text}\``;
@@ -104,7 +106,7 @@ export const table = (cells: string[][]) => {
   return markdownTable(cells);
 };
 
-export const richText = async (textArray: RichTextItemResponse[], plain = false, getPageLinkFromId?: (pageId: string) => Promise<{title: string, link: string} | null>) => {
+export const richText = async (textArray: RichTextItemResponse[], plain = false, notionClient?: Client) => {
   if (plain) {
     return textArray.map((text) => text.plain_text).join("");
   }
@@ -139,13 +141,17 @@ export const richText = async (textArray: RichTextItemResponse[], plain = false,
           throwOnError: false,
         });
       } else { // text.type === "mention"
-        if(text.href && text.href.startsWith("https://www.notion.so/")) {
-          if(!getPageLinkFromId)return "";
-          const pageId = text.href.split("https://www.notion.so/")[1];
-          const linkInfo = await getPageLinkFromId(pageId)
-          if (linkInfo) {
-            return link(linkInfo.title, linkInfo.link);
-          }
+        const mention = text.mention;
+        switch (mention.type) {
+          case "page":
+            if (!notionClient) return "";
+            const pageId: string = mention.page.id;
+            const linkInfo = await getPageLinkFromId(pageId, notionClient);
+            if (linkInfo) {
+              return link(linkInfo.title, linkInfo.link);
+            }
+            break;
+          // case "other types we don't support yet"  
         }
         return "";
       }

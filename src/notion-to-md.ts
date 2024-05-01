@@ -345,11 +345,7 @@ export class NotionToMarkdown {
       }
 
       case "paragraph":
-        // partial function application to bind notion client, so richText doesn't depend on the notion client
-        const partialGetPageLinkFromId = async (pageId: string) => {
-          return await getPageLinkFromId(pageId, this.notionClient);
-        }
-        return await richText(block.paragraph.rich_text,false,partialGetPageLinkFromId);
+        return await richText(block.paragraph.rich_text,false,this.notionClient);
       case "heading_1":
         return md.heading1(await richText(block.heading_1.rich_text));
       case "heading_2":
