@@ -1,8 +1,8 @@
-import { Client, isFullBlock } from "@notionhq/client"
-import { GetBlockResponse, RichTextItemResponse } from "@notionhq/client/build/src/api-endpoints"
-import { CustomTransformer, MdBlock, NotionToMarkdownOptions } from "./types"
-import * as md from "./utils/md"
-import { getBlockChildren, getPageLinkFromId } from "./utils/notion"
+import { Client, isFullBlock } from "@notionhq/client";
+import { GetBlockResponse, RichTextItemResponse } from "@notionhq/client/build/src/api-endpoints";
+import { CustomTransformer, MdBlock, NotionToMarkdownOptions } from "./types";
+import * as md from "./utils/md";
+import { getBlockChildren, getPageLinkFromId } from "./utils/notion";
 
 /**
  * Converts a Notion page to Markdown.
