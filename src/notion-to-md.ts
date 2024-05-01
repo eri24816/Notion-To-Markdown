@@ -210,9 +210,20 @@ export class NotionToMarkdown {
           const caption = bookmark.caption.length > 0 ? await richText(bookmark.caption, false) : bookmark.url;
           return md.link(caption, bookmark.url);
         }
+
+      case "link_to_page":
+        {
+          if (block.link_to_page.type === "page_id") {
+            const linkInfo = await getPageLinkFromId(block.link_to_page.page_id, this.notionClient);
+            if (linkInfo) {
+              return md.link(linkInfo.title, linkInfo.link);
+            }
+          }
+          return "";
+        }
+
       case "embed":
       case "link_preview":
-      case "link_to_page":
       case "child_page":
       case "child_database":
         {
@@ -220,18 +231,6 @@ export class NotionToMarkdown {
           let title: string = type;
           if (type === "embed") blockContent = block.embed;
           if (type === "link_preview") blockContent = block.link_preview;
-          if (
-            type === "link_to_page" &&
-            block.link_to_page.type === "page_id"
-          ) {
-            const linkInfo = await getPageLinkFromId(block.link_to_page.page_id, this.notionClient);
-            if (linkInfo) {
-              blockContent = { url: linkInfo.link };
-              title = linkInfo.title;
-            }
-            else blockContent = { url: block.link_to_page.page_id };
-          }
-
           if (type === "child_page") {
             blockContent = { url: block.id };
             title = block.child_page.title;
