@@ -184,7 +184,7 @@ export class NotionToMarkdown {
         {
           const image = block.image;
           const url = image.type === "external" ? image.external.url : image.file.url;
-          return md.image(richText(image.caption, true), url);
+          return md.image(await richText(image.caption, true), url);
         }
       case "divider": {
         return md.divider();
@@ -207,7 +207,7 @@ export class NotionToMarkdown {
       case "bookmark":
         {
           const bookmark = block.bookmark;
-          const caption = bookmark.caption.length > 0 ? richText(bookmark.caption, false) : bookmark.url;
+          const caption = bookmark.caption.length > 0 ? await richText(bookmark.caption, false) : bookmark.url;
           return md.link(caption, bookmark.url);
         }
       case "embed":
@@ -346,45 +346,31 @@ export class NotionToMarkdown {
       }
 
       case "paragraph":
-        //return richText(block.paragraph.rich_text);
-        // check for children links
-        let res = "";
-        for (const item of block.paragraph.rich_text) {
-          if(item.type === "mention") {
-            if(item.href && item.href.startsWith("https://www.notion.so/")) {
-              const pageId = item.href.split("https://www.notion.so/")[1];
-              const linkInfo = await getPageLinkFromId(pageId, this.notionClient);
-              if (linkInfo) {
-                res += `[${linkInfo.title}](${linkInfo.link})`;
-              }
-            }
-          }
-          else {
-            res += richText([item]);
-          }
+        // partial function application to bind notion client, so richText doesn't depend on the notion client
+        const partialGetPageLinkFromId = async (pageId: string) => {
+          return await getPageLinkFromId(pageId, this.notionClient);
         }
-        return res;
-
+        return await richText(block.paragraph.rich_text,false,partialGetPageLinkFromId);
       case "heading_1":
-        return md.heading1(richText(block.heading_1.rich_text));
+        return md.heading1(await richText(block.heading_1.rich_text));
       case "heading_2":
-        return md.heading2(richText(block.heading_2.rich_text));
+        return md.heading2(await richText(block.heading_2.rich_text));
       case "heading_3":
-        return md.heading3(richText(block.heading_3.rich_text));
+        return md.heading3(await richText(block.heading_3.rich_text));
       case "bulleted_list_item":
-        return md.bullet(richText(block.bulleted_list_item.rich_text));
+        return md.bullet(await richText(block.bulleted_list_item.rich_text));
       case "numbered_list_item":
-        return md.bullet(richText(block.numbered_list_item.rich_text), 1);
+        return md.bullet(await richText(block.numbered_list_item.rich_text), 1);
       case "to_do":
-        return md.todo(richText(block.to_do.rich_text), block.to_do.checked);
+        return md.todo(await richText(block.to_do.rich_text), block.to_do.checked);
       case "code":
         return md.codeBlock(
-          richText(block.code.rich_text, true),
+          await richText(block.code.rich_text, true),
           block.code.language
         );
       case "callout":
         const { id, has_children } = block;
-        const callout_text = richText(block.callout.rich_text);
+        const callout_text = await richText(block.callout.rich_text);
         if (!has_children) return md.callout(callout_text, block.callout.icon);
 
         let callout_string = "";
@@ -407,7 +393,7 @@ export class NotionToMarkdown {
 
         return md.callout(callout_string.trim(), block.callout.icon);
       case "quote":
-        const quote_text = richText(block.quote.rich_text)
+        const quote_text = await richText(block.quote.rich_text)
         if (!block.has_children) return md.quote(quote_text);
         let quote_string = "";
         const quote_children_object = await getBlockChildren(

@@ -104,13 +104,13 @@ export const table = (cells: string[][]) => {
   return markdownTable(cells);
 };
 
-export const richText = (textArray: RichTextItemResponse[], plain = false) => {
+export const richText = async (textArray: RichTextItemResponse[], plain = false, getPageLinkFromId?: (pageId: string) => Promise<{title: string, link: string} | null>) => {
   if (plain) {
     return textArray.map((text) => text.plain_text).join("");
   }
 
-  return textArray
-    .map((text) => {
+  return (await Promise.all(textArray
+    .map(async (text) => {
       if (text.type === "text") {
         const annotations = text.annotations;
         let content = text.text.content;
@@ -138,10 +138,18 @@ export const richText = (textArray: RichTextItemResponse[], plain = false) => {
           displayMode: false,
           throwOnError: false,
         });
-      } else {
-        // TODO
+      } else { // text.type === "mention"
+        if(text.href && text.href.startsWith("https://www.notion.so/")) {
+          if(!getPageLinkFromId)return "";
+          const pageId = text.href.split("https://www.notion.so/")[1];
+          const linkInfo = await getPageLinkFromId(pageId)
+          if (linkInfo) {
+            return link(linkInfo.title, linkInfo.link);
+          }
+        }
+        return "";
       }
-    })
+    })))
     .join("");
 };
 

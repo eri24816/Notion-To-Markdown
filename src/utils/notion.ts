@@ -1,5 +1,5 @@
 import { Client, isFullPage } from "@notionhq/client";
-import { GetBlockResponse, ListBlockChildrenResponse, PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { GetBlockResponse, GetPageResponse, ListBlockChildrenResponse, PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
 
 export const getBlockChildren = async (
   notionClient: Client,
@@ -49,7 +49,13 @@ export function getFileName(title: any, page_id: any): string {
 }
 
 export const getPageLinkFromId = async(pageId: string, notion: Client) => {
-  const dstPage = await (notion.pages.retrieve({ page_id: pageId }))
+  let dstPage: GetPageResponse
+  try{
+    dstPage = await (notion.pages.retrieve({ page_id: pageId }))
+  } catch (e) {
+    console.warn(`Failed to get page with id ${pageId}`)
+    return null
+  }
   if (isFullPage(dstPage)){
     const dst_file = getFileName(getPageTitle(dstPage), dstPage.id)
     const dst_link = `{{< relref "${dst_file}" >}}`
