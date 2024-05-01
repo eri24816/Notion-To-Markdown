@@ -1,8 +1,8 @@
-import { Client, isFullBlock } from "@notionhq/client";
-import { GetBlockResponse, RichTextItemResponse } from "@notionhq/client/build/src/api-endpoints";
-import { MdBlock, NotionToMarkdownOptions, CustomTransformer } from "./types";
-import * as md from "./utils/md";
-import { getBlockChildren } from "./utils/notion";
+import { Client, isFullBlock } from "@notionhq/client"
+import { GetBlockResponse, RichTextItemResponse } from "@notionhq/client/build/src/api-endpoints"
+import { CustomTransformer, MdBlock, NotionToMarkdownOptions } from "./types"
+import * as md from "./utils/md"
+import { getBlockChildren, getPageLinkFromId } from "./utils/notion"
 
 /**
  * Converts a Notion page to Markdown.
@@ -224,7 +224,12 @@ export class NotionToMarkdown {
             type === "link_to_page" &&
             block.link_to_page.type === "page_id"
           ) {
-            blockContent = { url: block.link_to_page.page_id };
+            const linkInfo = await getPageLinkFromId(block.link_to_page.page_id, this.notionClient);
+            if (linkInfo) {
+              blockContent = { url: linkInfo.link };
+              title = linkInfo.title;
+            }
+            else blockContent = { url: block.link_to_page.page_id };
           }
 
           if (type === "child_page") {
@@ -341,7 +346,25 @@ export class NotionToMarkdown {
       }
 
       case "paragraph":
-        return richText(block.paragraph.rich_text);
+        //return richText(block.paragraph.rich_text);
+        // check for children links
+        let res = "";
+        for (const item of block.paragraph.rich_text) {
+          if(item.type === "mention") {
+            if(item.href && item.href.startsWith("https://www.notion.so/")) {
+              const pageId = item.href.split("https://www.notion.so/")[1];
+              const linkInfo = await getPageLinkFromId(pageId, this.notionClient);
+              if (linkInfo) {
+                res += `[${linkInfo.title}](${linkInfo.link})`;
+              }
+            }
+          }
+          else {
+            res += richText([item]);
+          }
+        }
+        return res;
+
       case "heading_1":
         return md.heading1(richText(block.heading_1.rich_text));
       case "heading_2":
