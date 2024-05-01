@@ -1,5 +1,6 @@
 import { Client, isFullPage } from "@notionhq/client";
 import { GetBlockResponse, GetPageResponse, ListBlockChildrenResponse, PageObjectResponse } from "@notionhq/client/build/src/api-endpoints";
+import { plainText } from "./md"
 
 export const getBlockChildren = async (
   notionClient: Client,
@@ -35,7 +36,7 @@ export const getBlockChildren = async (
 export function getPageTitle(page: PageObjectResponse): string {
   const title = page.properties.Name ?? page.properties.title;
   if (title.type === "title") {
-    return title.title.map((text) => text.plain_text).join("");
+    return plainText(title.title);
   }
   throw Error(
     `page.properties.Name has type ${title.type} instead of title. The underlying Notion API might has changed, please report an issue to the author.`

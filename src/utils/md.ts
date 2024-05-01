@@ -106,11 +106,11 @@ export const table = (cells: string[][]) => {
   return markdownTable(cells);
 };
 
-export const richText = async (textArray: RichTextItemResponse[], plain = false, notionClient?: Client) => {
-  if (plain) {
-    return textArray.map((text) => text.plain_text).join("");
-  }
+export const plainText = (textArray: RichTextItemResponse[]) => {
+  return textArray.map((text) => text.plain_text).join("");
+}
 
+export const richText = async (textArray: RichTextItemResponse[], notionClient?: Client) => {
   return (await Promise.all(textArray
     .map(async (text) => {
       if (text.type === "text") {

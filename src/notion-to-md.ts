@@ -3,6 +3,7 @@ import { GetBlockResponse, RichTextItemResponse } from "@notionhq/client/build/s
 import { CustomTransformer, MdBlock, NotionToMarkdownOptions } from "./types";
 import * as md from "./utils/md";
 import { getBlockChildren, getPageLinkFromId } from "./utils/notion";
+import { plainText } from "./utils/md"
 
 /**
  * Converts a Notion page to Markdown.
@@ -10,7 +11,7 @@ import { getBlockChildren, getPageLinkFromId } from "./utils/notion";
 export class NotionToMarkdown {
   private notionClient: Client;
   private customTransformers: Record<string, CustomTransformer>;
-  private richTextTransformer: ((textArray: RichTextItemResponse[], plain?: boolean) => string) | undefined;
+  private richTextTransformer: ((textArray: RichTextItemResponse[]) => string) | undefined;
   private unsupportedTransformer: ((type: string) => string) = () => "";
   constructor(options: NotionToMarkdownOptions) {
     this.notionClient = options.notionClient;
@@ -184,7 +185,7 @@ export class NotionToMarkdown {
         {
           const image = block.image;
           const url = image.type === "external" ? image.external.url : image.file.url;
-          return md.image(await richText(image.caption, true), url);
+          return md.image(plainText(image.caption), url);
         }
       case "divider": {
         return md.divider();
@@ -207,7 +208,7 @@ export class NotionToMarkdown {
       case "bookmark":
         {
           const bookmark = block.bookmark;
-          const caption = bookmark.caption.length > 0 ? await richText(bookmark.caption, false) : bookmark.url;
+          const caption = bookmark.caption.length > 0 ? await richText(bookmark.caption) : bookmark.url;
           return md.link(caption, bookmark.url);
         }
 
@@ -345,7 +346,7 @@ export class NotionToMarkdown {
       }
 
       case "paragraph":
-        return await richText(block.paragraph.rich_text,false,this.notionClient);
+        return await richText(block.paragraph.rich_text,this.notionClient);
       case "heading_1":
         return md.heading1(await richText(block.heading_1.rich_text));
       case "heading_2":
@@ -360,7 +361,7 @@ export class NotionToMarkdown {
         return md.todo(await richText(block.to_do.rich_text), block.to_do.checked);
       case "code":
         return md.codeBlock(
-          await richText(block.code.rich_text, true),
+          plainText(block.code.rich_text),
           block.code.language
         );
       case "callout":
