@@ -43,10 +43,17 @@ export function getPageTitle(page: PageObjectResponse): string {
   );
 }
 
-export function getFileName(title: any, page_id: any): string {
+
+export function getFileName(title: string, page_id: string, extension: string='md'): string {
+  if(extension !== '' && extension[0] !== '.') {
+    extension = '.' + extension
+  }
+  // replace all invalid characters
+  title = title.replace(/[^a-zA-Z0-9 ]/g, "");
+
   return title.replaceAll(" ", "-").replace(/--+/g, "-") +
   "-" +
-  page_id.replaceAll("-", "") + '.md';
+  page_id.replaceAll("-", "").slice(0, 6) + extension;
 }
 
 export const getPageLinkFromId = async(pageId: string, notion: Client) => {
