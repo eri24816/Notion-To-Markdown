@@ -38,15 +38,15 @@ ${text}
 };
 
 export const heading1 = (text: string) => {
-  return `# ${text}`;
-};
-
-export const heading2 = (text: string) => {
   return `## ${text}`;
 };
 
-export const heading3 = (text: string) => {
+export const heading2 = (text: string) => {
   return `### ${text}`;
+};
+
+export const heading3 = (text: string) => {
+  return `#### ${text}`;
 };
 
 export const quote = (text: string) => {
